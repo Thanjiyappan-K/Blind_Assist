@@ -1,920 +1,352 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLIND-ASSIST | Real-time Object Detection</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.95;
-        }
-
-        .content {
-            padding: 20px;
-        }
-
-        .video-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 4/3;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            cursor: crosshair;
-        }
-
-        #capture {
-            display: none;
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            flex: 1;
-            min-width: 120px;
-            padding: 14px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-start:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-stop {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-stop:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.4);
-        }
-
-        .btn-tts {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-tts:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-tts:active {
-            transform: translateY(0);
-        }
-
-        .status-bar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .status-item {
-            background: #f3f4f6;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .status-label {
-            font-size: 12px;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .status-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .alert-box {
-            background: #fef2f2;
-            border: 2px solid #fca5a5;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .alert-box.active {
-            display: block;
-            animation: pulse 0.6s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-            }
-            50% {
-                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
-            }
-        }
-
-        .alert-title {
-            color: #dc2626;
-            font-weight: 700;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-
-        .alert-content {
-            color: #991b1b;
-            font-size: 14px;
-        }
-
-        .detections-list {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .detection-item {
-            background: white;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .detection-item.critical {
-            background: #fef2f2;
-            border-left-color: #dc2626;
-        }
-
-        .detection-label {
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .detection-distance {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .detection-distance.critical {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-indicator.connected {
-            background: #10b981;
-            animation: blink 2s infinite;
-        }
-
-        .status-indicator.disconnected {
-            background: #ef4444;
-        }
-
-        @keyframes blink {
-            0%, 49%, 100% {
-                opacity: 1;
-            }
-            50%, 99% {
-                opacity: 0.5;
-            }
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #6b7280;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 24px;
-            }
-
-            .controls {
-                flex-direction: column;
-            }
-
-            button {
-                min-width: unset;
-            }
-
-            .status-bar {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚗 BLIND-ASSIST</h1>
-            <p>Real-time Obstacle Detection with AI Vision</p>
-        </div>
-
-        <div class="content">
-            <div class="video-container">
-                <video id="video" autoplay playsinline muted></video>
-                <canvas id="overlay"></canvas>
-            </div>
-            <canvas id="capture" width="640" height="480" style="display:none"></canvas>
-
-            <div class="controls">
-                <button class="btn-start" id="startBtn">▶ Start Detection</button>
-                <button class="btn-stop" id="stopBtn" disabled>⏹ Stop</button>
-                <button class="btn-tts" id="ttsBtn">🔊 Read Alerts</button>
-            </div>
-
-            <div class="alert-box" id="alertBox">
-                <div class="alert-title">⚠️ CRITICAL OBSTACLE AHEAD</div>
-                <div class="alert-content" id="alertContent">Object detected within 1.2 meters!</div>
-            </div>
-
-            <div class="status-bar">
-                <div class="status-item">
-                    <div class="status-label">Connection Status</div>
-                    <div class="status-value">
-                        <span class="status-indicator disconnected" id="statusIndicator"></span>
-                        <span id="connectionStatus">Disconnected</span>
-                    </div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">Detections</div>
-                    <div class="status-value" id="detectionCount">0</div>
-                </div>
-            </div>
-
-            <div class="detections-list" id="detectionsList">
-                <div style="color: #9ca3af; text-align: center; padding: 20px;">
-                    No detections yet. Start the camera to begin.
-                </div>
-            </div>
-
-            <div class="info-text">
-                💡 Tip: Grant camera permissions and ensure good lighting for best results
-            </div>
-        </div>
-    </div>
-
-<script>
-        // ============================================
-        // STATE & ELEMENTS
-        // ============================================
-        let ws = null;
-        let isBusy = false;
-        let isRunning = false;
-        let lastAlertTime = 0;
-        const ALERT_COOLDOWN = 1000; // 1 second cooldown between TTS alerts
-
-        const video = document.getElementById("video");
-        const overlay = document.getElementById("overlay");
-        const capture = document.getElementById("capture");
-        const ctxO = overlay.getContext("2d");
-        const ctxC = capture.getContext("2d");
-
-        const startBtn = document.getElementById("startBtn");
-        const stopBtn = document.getElementById("stopBtn");
-        const ttsBtn = document.getElementById("ttsBtn");
-        const alertBox = document.getElementById("alertBox");
-        const alertContent = document.getElementById("alertContent");
-        const connectionStatus = document.getElementById("connectionStatus");
-        const statusIndicator = document.getElementById("statusIndicator");
-        const detectionCount = document.getElementById("detectionCount");
-        const detectionsList = document.getElementById("detectionsList");
-
-        // ============================================
-        // WEB SPEECH API - TEXT TO SPEECH
-        // ============================================
-        const synth = window.speechSynthesis;
-
-        function speak(text) {
-            if (synth.speaking) {
-                synth.cancel();
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-            synth.speak(utterance);
-        }
-
-        function generateAlertMessage(criticalAlerts) {
-            if (criticalAlerts.length === 0) return null;
-            
-            const sorted = criticalAlerts.sort((a, b) => a.distance - b.distance);
-            const nearest = sorted[0];
-            
-            return `Warning! ${nearest.class} detected at ${nearest.distance} meters. Immediate caution required!`;
-        }
-
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-        async function start() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" } 
-                });
-                video.srcObject = stream;
-
-                await new Promise(res => (video.onloadedmetadata = res));
-                overlay.width = video.videoWidth;
-                overlay.height = video.videoHeight;
-                capture.width = video.videoWidth;
-                capture.height = video.videoHeight;
-
-                // Initialize WebSocket
-                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-                const wsUrl = `${protocol}//${window.location.hostname}:8000/ws`;
-                ws = new WebSocket(wsUrl);
-                ws.binaryType = "arraybuffer";
-
-                ws.onopen = () => {
-                    isRunning = true;
-                    updateConnectionStatus(true);
-                    startBtn.disabled = true;
-                    stopBtn.disabled = false;
-                    speak("Camera started. Detection enabled.");
-                    captureAndSend();
-                };
-
-                ws.onmessage = (ev) => {
-                    isBusy = false;
-                    const msg = JSON.parse(ev.data);
-                    
-                    if (msg.detections) {
-                        drawDetections(msg.detections);
-                        updateDetectionsList(msg.detections);
-                        detectionCount.textContent = msg.detections.length;
-                    }
-
-                    if (msg.critical_alerts && msg.critical_alerts.length > 0) {
-                        handleCriticalAlert(msg.critical_alerts);
-                    } else {
-                        alertBox.classList.remove("active");
-                    }
-
-                    if (isRunning) {
-                        requestAnimationFrame(captureAndSend);
-                    }
-                };
-
-                ws.onerror = (err) => {
-                    console.error("WebSocket error:", err);
-                    updateConnectionStatus(false);
-                    speak("Connection error. Stopping detection.");
-                };
-
-                ws.onclose = () => {
-                    updateConnectionStatus(false);
-                    isRunning = false;
-                    startBtn.disabled = false;
-                    stopBtn.disabled = true;
-                };
-
-            } catch (err) {
-                alert("Camera access denied or not available.");
-                console.error(err);
-            }
-        }
-
-        function stop() {
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-            }
-            isRunning = false;
-            ctxO.clearRect(0, 0, overlay.width, overlay.height);
-            detectionCount.textContent = "0";
-            detectionsList.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">Detection stopped.</div>';
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            speak("Detection stopped.");
-        }
-
-        // ============================================
-        // CAPTURE & SEND FRAME
-        // ============================================
-        function captureAndSend() {
-            if (!ws || ws.readyState !== 1 || isBusy || !isRunning) return;
-            isBusy = true;
-
-            ctxC.drawImage(video, 0, 0, capture.width, capture.height);
-            capture.toBlob(blob => {
-                if (blob && ws && ws.readyState === 1) {
-                    ws.send(blob);
-                } else {
-                    isBusy = false;
-                }
-            }, "image/jpeg", 0.7);
-        }
-
-        // ============================================
-        // DRAWING & ALERTS
-        // ============================================
-        function drawDetections(dets) {
-            ctxO.clearRect(0, 0, overlay.width, overlay.height);
-            
-            for (const d of dets.slice(0, 10)) {
-                const { x1, y1, x2, y2, class: label, distance, conf } = d;
-                
-                // Color based on distance
-                const isCritical = distance < 1.2;
-                ctxO.strokeStyle = isCritical ? "#dc2626" : "#10b981";
-                ctxO.fillStyle = isCritical ? "rgba(220, 38, 38, 0.2)" : "rgba(16, 185, 129, 0.1)";
-                ctxO.lineWidth = 3;
-
-                ctxO.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                ctxO.fillRect(x1, y1, x2 - x1, y2 - y1);
-
-                // Label background
-                ctxO.fillStyle = isCritical ? "rgba(220, 38, 38, 0.9)" : "rgba(0, 0, 0, 0.7)";
-                ctxO.fillRect(x1, y1 - 28, 200, 26);
-
-                // Label text
-                ctxO.fillStyle = "white";
-                ctxO.font = "bold 14px Segoe UI";
-                ctxO.textBaseline = "middle";
-                ctxO.fillText(`${label} | ${distance}m | ${(conf * 100).toFixed(0)}%`, x1 + 6, y1 - 15);
-            }
-        }
-
-        function handleCriticalAlert(criticalAlerts) {
-            if (criticalAlerts.length > 0) {
-                alertBox.classList.add("active");
-                
-                const sorted = criticalAlerts.sort((a, b) => a.distance - b.distance);
-                const nearest = sorted[0];
-                
-                alertContent.textContent = `${nearest.class.toUpperCase()} at ${nearest.distance}m - IMMEDIATE CAUTION!`;
-
-                // TTS alert with cooldown
-                const now = Date.now();
-                if (now - lastAlertTime > ALERT_COOLDOWN) {
-                    const message = generateAlertMessage(criticalAlerts);
-                    if (message) {
-                        speak(message);
-                        lastAlertTime = now;
-                    }
-                }
-            }
-        }
-
-        function updateDetectionsList(dets) {
-            if (dets.length === 0) {
-                detectionsList.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No objects detected.</div>';
-                return;
-            }
-
-            detectionsList.innerHTML = dets.slice(0, 8).map(d => `
-                <div class="detection-item ${d.distance < 1.2 ? 'critical' : ''}">
-                    <div>
-                        <span class="detection-label">${d.class}</span>
-                        <span style="color: #9ca3af; margin-left: 8px; font-size: 12px;">${(d.conf * 100).toFixed(0)}% confidence</span>
-                    </div>
-                    <span class="detection-distance ${d.distance < 1.2 ? 'critical' : ''}">
-                        ${d.distance}m
-                    </span>
-                </div>
-            `).join('');
-        }
-
-        function updateConnectionStatus(connected) {
-            if (connected) {
-                connectionStatus.textContent = "Connected";
-                statusIndicator.className = "status-indicator connected";
-            } else {
-                connectionStatus.textContent = "Disconnected";
-                statusIndicator.className = "status-indicator disconnected";
-            }
-        }
-
-        // ============================================
-        // EVENT LISTENERS
-        // ============================================
-        startBtn.addEventListener("click", start);
-        stopBtn.addEventListener("click", stop);
-
-        ttsBtn.addEventListener("click", () => {
-            const count = detectionCount.textContent;
-            const detections = detectionsList.textContent;
-            const message = `Currently detecting ${count} objects. ${detections.includes('No objects') ? 'No threats detected.' : 'Review the list for details.'}`;
-            speak(message);
-        });
-
-        // Auto-update connection status every 5 seconds
-        setInterval(() => {
-            if (ws && ws.readyState === 1 && isRunning) {
-                updateConnectionStatus(true);
-            } else if (isRunning) {
-                updateConnectionStatus(false);
-            }
-        }, 5000);
-
-        updateConnectionStatus(false);
-    </script>
-</body>
-</html> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLIND-ASSIST | Real-time Continuous</title>
+    <title>BLIND-ASSIST | Advanced Safety</title>
     <style>
-        /* [STYLES REMAIN EXACTLY THE SAME AS YOUR BEAUTIFUL DESIGN] */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 900px; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; text-align: center; }
-        .header h1 { font-size: 32px; margin-bottom: 8px; font-weight: 700; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; transition: background 0.3s; }
+        
+        /* Danger State Background Animation */
+        body.danger-mode { animation: flashRed 0.5s infinite alternate; }
+        @keyframes flashRed { from { background: #450a0a; } to { background: #7f1d1d; } }
+
+        .container { width: 100%; max-width: 900px; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); overflow: hidden; position: relative; }
+        
+        .header { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); color: white; padding: 25px; text-align: center; }
+        .header h1 { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+        .header p { opacity: 0.8; font-size: 14px; }
+
         .content { padding: 20px; }
-        .video-container { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        
+        /* Video Area */
+        .video-wrapper { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 15px; overflow: hidden; margin-bottom: 20px; border: 4px solid #333; }
         #video, #overlay { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
         #overlay { z-index: 2; }
-        .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        button { flex: 1; min-width: 120px; padding: 14px 20px; font-size: 15px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: white; }
-        .btn-start { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .btn-stop { background: #ef4444; }
-        .btn-start:disabled, .btn-stop:disabled { opacity: 0.6; cursor: not-allowed; }
-        .status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .status-item { background: #f3f4f6; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
-        .status-value { font-size: 20px; font-weight: 700; color: #1f2937; }
-        .alert-box { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none; }
-        .alert-box.active { display: block; }
-        .alert-title { color: #dc2626; font-weight: 700; }
+        
+        /* Danger Overlay */
+        #danger-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.3); z-index: 3; display: none; pointer-events: none; border: 8px solid red; box-sizing: border-box; }
+        #danger-screen.active { display: block; }
+
+        /* Controls */
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; }
+        button { flex: 1; padding: 15px; font-size: 16px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-start { background: #22c55e; box-shadow: 0 4px 0 #15803d; }
+        .btn-start:active { transform: translateY(4px); box-shadow: none; }
+        .btn-stop { background: #ef4444; box-shadow: 0 4px 0 #b91c1c; }
+        .btn-stop:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* Info Panels */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: #f8fafc; padding: 15px; border-radius: 10px; border-left: 5px solid #ccc; }
+        .card h3 { font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .card .value { font-size: 18px; font-weight: 700; color: #334155; }
+        
+        .card.danger { border-left-color: #ef4444; background: #fef2f2; }
+        .card.caution { border-left-color: #f59e0b; background: #fffbeb; }
+        .card.safe { border-left-color: #22c55e; background: #f0fdf4; }
+
     </style>
 </head>
 <body>
+
     <div class="container">
         <div class="header">
-            <h1>🚗 BLIND-ASSIST PRO</h1>
-            <p>Continuous Feedback Mode</p>
+            <h1>🛡️ BLIND-ASSIST PRO</h1>
+            <p>Multi-Object Detection & Collision Avoidance</p>
         </div>
 
         <div class="content">
-            <div class="video-container">
+            <div class="video-wrapper">
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="overlay"></canvas>
+                <div id="danger-screen"></div>
             </div>
+            
             <canvas id="capture" style="display:none"></canvas>
 
             <div class="controls">
-                <button class="btn-start" id="startBtn">▶ Start Continuous</button>
+                <button class="btn-start" id="startBtn">▶ Activate System</button>
                 <button class="btn-stop" id="stopBtn" disabled>⏹ Stop</button>
             </div>
 
-            <div class="alert-box" id="alertBox">
-                <div class="alert-title">⚠️ DETECTED</div>
-                <div id="alertContent" style="color:#991b1b"></div>
+            <div class="info-grid">
+                <div class="card" id="statusCard">
+                    <h3>System Status</h3>
+                    <div class="value" id="statusText">Standby</div>
+                </div>
+                <div class="card" id="alertCard">
+                    <h3>Nearest Threat</h3>
+                    <div class="value" id="nearestObj">None</div>
+                </div>
             </div>
-
-            <div class="status-bar">
-                <div class="status-item">
-                    <div>Status</div>
-                    <div class="status-value" id="statusText" style="color:orange">Ready</div>
-                </div>
-                <div class="status-item">
-                    <div>Closest Object</div>
-                    <div class="status-value" id="closestObj">None</div>
-                </div>
+            
+            <div style="margin-top:15px; background:#eee; padding:10px; border-radius:8px; font-size:14px; color:#555;">
+                <strong>Scene Summary:</strong> <span id="fullSummary">...</span>
             </div>
         </div>
     </div>
 
 <script>
     // ============================================
-    // 1. CONFIGURATION
+    // 1. SETTINGS & CONSTANTS
     // ============================================
-    const WS_URL = `ws://${window.location.hostname}:8000/ws`;
-    const synth = window.speechSynthesis;
+    const WS_URL = `wss://${window.location.hostname}:8000/ws`;
+    const THRESHOLD_DANGER = 1.0;  // Less than 1 meter = STOP
+    const THRESHOLD_CAUTION = 2.5; // Less than 2.5 meters = WARNING
     
-    // ============================================
-    // 2. DOM ELEMENTS
-    // ============================================
+    // Limits how often we speak the "summary" (list of objects) so we don't overwhelm the user
+    const SUMMARY_INTERVAL_MS = 4000; 
+
+    const synth = window.speechSynthesis;
+    let ws = null;
+    let isRunning = false;
+    let lastSummaryTime = 0;
+
+    // DOM Elements
     const video = document.getElementById("video");
     const overlay = document.getElementById("overlay");
     const capture = document.getElementById("capture");
     const ctxOverlay = overlay.getContext("2d");
     const ctxCapture = capture.getContext("2d");
+    const dangerScreen = document.getElementById("danger-screen");
+    const body = document.body;
     
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
+    // UI Text
     const statusText = document.getElementById("statusText");
-    const closestObjText = document.getElementById("closestObj");
-    const alertBox = document.getElementById("alertBox");
-    const alertContent = document.getElementById("alertContent");
-
-    let ws = null;
-    let isRunning = false;
-    let lastSpokenText = "";
+    const nearestObjText = document.getElementById("nearestObj");
+    const fullSummaryText = document.getElementById("fullSummary");
+    const statusCard = document.getElementById("statusCard");
+    const alertCard = document.getElementById("alertCard");
 
     // ============================================
-    // 3. CONTINUOUS SPEECH ENGINE (NO DELAY)
+    // 2. INTELLIGENT SPEECH ENGINE
     // ============================================
-    function speakImmediate(text) {
-        // Optimization: If the text is EXACTLY the same as what we are currently saying,
-        // don't interrupt (it sounds glitchy if we restart "Car... C... Ca..." 30 times a second).
-        // Only interrupt if the distance or object changes.
-        if (text === lastSpokenText && synth.speaking) return;
+    
+    /**
+     * Handles speech based on priority.
+     * @param {string} text - The text to speak.
+     * @param {boolean} isUrgent - If true, interrupt current speech immediately.
+     */
+    function speak(text, isUrgent = false) {
+        if (!text) return;
 
-        // CRITICAL: Cancel the previous utterance immediately.
-        // This effectively "updates" the voice to the newest distance instantly.
-        synth.cancel();
+        // If it's urgent (Danger), cancel everything and speak NOW.
+        if (isUrgent) {
+            if (synth.speaking) synth.cancel(); // HARD STOP previous speech
+            
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 1.4;  // Fast rate for warnings
+            u.pitch = 1.2; // Higher pitch for urgency
+            synth.speak(u);
+            return;
+        }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.3; // Speak slightly faster for real-time feel
-        utterance.pitch = 1.0;
-        
-        // When this specific utterance finishes, clear our memory so we can repeat if needed
-        utterance.onend = () => { if(lastSpokenText === text) lastSpokenText = ""; };
-        
-        synth.speak(utterance);
-        lastSpokenText = text;
+        // If it's NOT urgent (just a summary), only speak if we are silent
+        // This prevents the "Summary" from overlapping or queuing up forever
+        if (!synth.speaking) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 1.1; // Normal rate
+            synth.speak(u);
+        }
     }
 
     // ============================================
-    // 4. MAIN LOGIC
+    // 3. MAIN SYSTEM LOOP
     // ============================================
-    async function start() {
+    async function startSystem() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            });
             video.srcObject = stream;
             
-            // Wait for video load to set canvas size
             await new Promise(r => video.onloadedmetadata = r);
             capture.width = video.videoWidth;
             capture.height = video.videoHeight;
             overlay.width = video.videoWidth;
             overlay.height = video.videoHeight;
 
-            // Connect WebSocket
             ws = new WebSocket(WS_URL);
             ws.binaryType = "arraybuffer";
             
             ws.onopen = () => {
                 isRunning = true;
-                statusText.innerText = "Connected";
-                statusText.style.color = "green";
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                speakImmediate("System started");
-                // Kickstart the loop
+                updateStatus("Active", "safe");
+                document.getElementById("startBtn").disabled = true;
+                document.getElementById("stopBtn").disabled = false;
+                speak("System Active. Monitoring surroundings.");
                 sendFrame();
             };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                handleServerResponse(data);
-                
-                // PING-PONG LOOP: Send next frame immediately after receiving this one
+                processDetections(data);
                 if (isRunning) requestAnimationFrame(sendFrame);
             };
 
-            ws.onclose = () => {
-                statusText.innerText = "Disconnected";
-                statusText.style.color = "red";
-                stop();
-            };
+            ws.onclose = stopSystem;
 
         } catch (e) {
-            alert("Camera Error: " + e);
+            alert("Camera access denied or error: " + e.message);
         }
     }
 
-    function stop() {
+    function stopSystem() {
         isRunning = false;
         if (ws) ws.close();
         if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
         
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
         ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
-        speakImmediate("System stopped");
+        dangerScreen.classList.remove("active");
+        body.classList.remove("danger-mode");
+        
+        updateStatus("Stopped", "safe");
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("stopBtn").disabled = true;
+        speak("System Deactivated");
     }
 
     function sendFrame() {
         if (!ws || ws.readyState !== 1 || !isRunning) return;
-        
         ctxCapture.drawImage(video, 0, 0, capture.width, capture.height);
         capture.toBlob(blob => {
             if (blob) ws.send(blob);
-        }, 'image/jpeg', 0.5); // Low quality for max speed
+        }, 'image/jpeg', 0.5);
     }
 
-    function handleServerResponse(data) {
-        // Clear previous drawings
+    // ============================================
+    // 4. DETECTION LOGIC & SAFETY FEATURES
+    // ============================================
+    function processDetections(data) {
         ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
-
         const detections = data.detections || [];
         
         if (detections.length === 0) {
-            closestObjText.innerText = "None";
-            alertBox.classList.remove("active");
+            resetSafetyState();
             return;
         }
 
-        // 1. Draw all boxes
-        detections.forEach(drawBox);
+        // 1. SORT: Closest objects first
+        detections.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
-        // 2. Identify the PRIMARY object (Backend sorts by size/height automatically)
-        const primary = detections[0];
+        // 2. ANALYZE THREAT LEVEL
+        const closest = detections[0];
+        const dist = parseFloat(closest.distance);
         
-        // 3. Construct the voice string
-        // Format: "Person 2 meters"
-        const speechText = `${primary.class} ${primary.distance}`;
+        let threatLevel = "SAFE"; // SAFE, CAUTION, DANGER
         
-        // 4. Update UI
-        closestObjText.innerText = speechText;
-        alertBox.classList.add("active");
-        alertContent.innerText = speechText;
+        if (dist < THRESHOLD_DANGER) threatLevel = "DANGER";
+        else if (dist < THRESHOLD_CAUTION) threatLevel = "CAUTION";
 
-        // 5. SPEAK IMMEDIATELY (Continuous)
-        speakImmediate(speechText);
+        // 3. DRAW VISUALS
+        detections.forEach(d => drawBox(d, threatLevel));
+
+        // 4. HANDLE ALERTS (Logic)
+        handleSafetyAlerts(detections, threatLevel, closest);
     }
 
-    function drawBox(d) {
+    function handleSafetyAlerts(allObjects, threatLevel, closestObj) {
+        const now = Date.now();
+        const dist = closestObj.distance;
+        const label = closestObj.class;
+
+        // --- SCENARIO A: DANGER (< 1m) ---
+        if (threatLevel === "DANGER") {
+            // Visuals
+            dangerScreen.classList.add("active");
+            body.classList.add("danger-mode");
+            alertCard.className = "card danger";
+            
+            // Text Update
+            nearestObjText.innerText = `STOP! ${label} (${dist})`;
+            
+            // Speech: URGENT INTERRUPT
+            // Example: "Stop! Person very close!"
+            speak(`Stop! ${label} ${dist}`, true); 
+            return; // Exit function, do not process summaries
+        }
+
+        // --- SCENARIO B: CAUTION (1m - 2.5m) ---
+        else if (threatLevel === "CAUTION") {
+            dangerScreen.classList.remove("active");
+            body.classList.remove("danger-mode");
+            alertCard.className = "card caution";
+            nearestObjText.innerText = `⚠️ ${label} (${dist})`;
+
+            // Speech: Urgent but less aggressive
+            // Only speak if we haven't spoken the exact same thing recently, 
+            // OR if enough time passed. We treat Caution as semi-urgent.
+            if (!synth.speaking) {
+                 speak(`Caution. ${label} ${dist}`, true);
+            }
+        } 
+        
+        // --- SCENARIO C: SAFE (> 2.5m) ---
+        else {
+            resetSafetyState();
+            nearestObjText.innerText = `${label} (${dist})`;
+        }
+
+        // --- SCENARIO D: SCENE SUMMARY (The "List" feature) ---
+        // Only read the full list if we are NOT in Danger mode and interval passed
+        if (threatLevel !== "DANGER" && (now - lastSummaryTime > SUMMARY_INTERVAL_MS)) {
+            
+            // Generate list of top 3 objects
+            // Example: "Person 2 meters, Chair 3 meters"
+            const summaryList = allObjects.slice(0, 3).map(d => `${d.class} ${d.distance}`).join(", ");
+            
+            fullSummaryText.innerText = summaryList;
+            
+            // Speak the list comfortably
+            speak(summaryList, false);
+            
+            lastSummaryTime = now;
+        }
+    }
+
+    function drawBox(d, overallThreat) {
         const { x1, y1, x2, y2, class: label, distance } = d;
-        const color = distance < 1.5 ? "red" : "#00ff00"; // Red if close
+        const distNum = parseFloat(distance);
 
-        ctxOverlay.strokeStyle = color;
-        ctxOverlay.lineWidth = 4;
-        ctxOverlay.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        let color = "#22c55e"; // Green (Safe)
         
+        if (distNum < THRESHOLD_DANGER) color = "#ff0000";      // Red
+        else if (distNum < THRESHOLD_CAUTION) color = "#f59e0b"; // Orange
+
+        ctxOverlay.lineWidth = 4;
+        ctxOverlay.strokeStyle = color;
+        ctxOverlay.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+        // Label Background
         ctxOverlay.fillStyle = color;
-        ctxOverlay.font = "bold 18px Arial";
-        ctxOverlay.fillText(`${label} ${distance}m`, x1, y1 - 10);
+        const text = `${label} ${distance}`;
+        const width = ctxOverlay.measureText(text).width;
+        ctxOverlay.fillRect(x1, y1 - 25, width + 10, 25);
+
+        // Label Text
+        ctxOverlay.fillStyle = "#fff";
+        ctxOverlay.font = "bold 16px Arial";
+        ctxOverlay.fillText(text, x1 + 5, y1 - 7);
     }
 
-    // ============================================
-    // 5. EVENT LISTENERS
-    // ============================================
-    startBtn.onclick = start;
-    stopBtn.onclick = stop;
+    function resetSafetyState() {
+        dangerScreen.classList.remove("active");
+        body.classList.remove("danger-mode");
+        alertCard.className = "card safe";
+    }
+
+    function updateStatus(text, type) {
+        statusText.innerText = text;
+        statusCard.className = `card ${type}`;
+    }
+
+    // Event Listeners
+    document.getElementById("startBtn").onclick = startSystem;
+    document.getElementById("stopBtn").onclick = stopSystem;
 
 </script>
 </body>
